@@ -1,0 +1,709 @@
+' ╔══════════════════════════════════════════════════════════════╗
+' ║       DIAGRAMAS UML — agenda0.py  (sem persistência)        ║
+' ║  1. Casos de Uso                                             ║
+' ║  2. Componentes / Camadas                                    ║
+' ║  3. Atividades — Menu Principal                              ║
+' ║  4. Atividades — Criar Contato                               ║
+' ║  5. Atividades — Editar Contato                              ║
+' ║  6. Atividades — Excluir Contato                             ║
+' ║  7. Sequência   — Inicialização                              ║
+' ║  8. Sequência   — Criar Contato                              ║
+' ╚══════════════════════════════════════════════════════════════╝
+
+
+' ──────────────────────────────────────────────────────────────
+'  1. DIAGRAMA DE CASOS DE USO
+' ──────────────────────────────────────────────────────────────
+@startuml 01_casos_de_uso
+title Diagrama de Casos de Uso — agenda0.py (sem persistência)
+
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam usecaseBorderColor #4A90D9
+skinparam usecaseBackgroundColor #EAF4FF
+skinparam actorBorderColor #2C5F8A
+skinparam ArrowColor #2C5F8A
+
+actor "Usuário" as U
+
+rectangle "Agenda de Contatos (sem persistência)" {
+    usecase "Adicionar contato"   as UC1
+    usecase "Listar contatos"     as UC2
+    usecase "Buscar contato"      as UC3
+    usecase "Ver detalhes"        as UC4
+    usecase "Editar contato"      as UC5
+    usecase "Excluir contato"     as UC6
+    usecase "Validar e-mail"      as UC7
+    usecase "Validar telefone"    as UC8
+}
+
+note bottom of UC2
+  Dados existem apenas
+  em memória — perdidos
+  ao encerrar o programa
+end note
+
+U --> UC1
+U --> UC2
+U --> UC3
+U --> UC4
+U --> UC5
+U --> UC6
+
+UC1 ..> UC7 : <<include>>
+UC1 ..> UC8 : <<include>>
+UC5 ..> UC7 : <<include>>
+UC5 ..> UC8 : <<include>>
+@enduml
+
+
+' ──────────────────────────────────────────────────────────────
+'  2. DIAGRAMA DE COMPONENTES / CAMADAS
+' ──────────────────────────────────────────────────────────────
+@startuml 02_componentes
+title Diagrama de Componentes — agenda0.py (sem persistência)
+
+skinparam componentStyle rectangle
+skinparam packageBackgroundColor #F5F5F5
+skinparam componentBackgroundColor #DDEEFF
+skinparam componentBorderColor #4A90D9
+skinparam ArrowColor #333333
+skinparam defaultFontSize 12
+
+package "agenda0.py" {
+
+    package "Interface de Usuário (UI)" #EAF4FF {
+        component [menu_principal()]  as MENU
+        component [cabecalho()]       as CAB
+        component [linha()]           as LIN
+        component [limpar()]          as LIMP
+        component [pausar()]          as PAUS
+        component [entrada()]         as ENT
+        component [exibir_contato()]  as EXIB
+    }
+
+    package "CRUD — Lógica de Negócio" #E8FFE8 {
+        component [criar_contato()]   as CR
+        component [listar_contatos()] as LS
+        component [buscar_contato()]  as BU
+        component [exibir_detalhes()] as ED
+        component [editar_contato()]  as ET
+        component [excluir_contato()] as EX
+    }
+
+    package "Validação" #FFF8DC {
+        component [validar_email()]    as VE
+        component [validar_telefone()] as VT
+        component [RE_EMAIL]           as RE1
+        component [RE_TELEFONE]        as RE2
+    }
+
+    package "Helpers de Contato" #F0E8FF {
+        component [proximo_id()]   as PID
+        component [buscar_por_id()] as BPI
+    }
+
+    package "Dados / Estado Global (somente memória)" #FFE8E8 {
+        database "agenda: list[dict]" as LISTA
+        note right of LISTA
+          Volátil — dados
+          perdidos ao sair
+        end note
+    }
+
+    package "Inicialização" #FFFACD {
+        component [__main__]       as MAIN
+        component [carregar_demo()] as DEMO
+    }
+}
+
+MENU --> CR
+MENU --> LS
+MENU --> BU
+MENU --> ED
+MENU --> ET
+MENU --> EX
+
+CR --> VE
+CR --> VT
+CR --> PID
+ET --> VE
+ET --> VT
+ET --> BPI
+EX --> BPI
+BU --> EXIB
+ED --> BPI
+LS --> EXIB
+
+VE --> RE1
+VT --> RE2
+
+CR --> LISTA
+LS --> LISTA
+BU --> LISTA
+ET --> LISTA
+EX --> LISTA
+BPI --> LISTA
+PID --> LISTA
+
+MAIN --> DEMO
+MAIN --> MENU
+DEMO --> LISTA
+@enduml
+
+
+' ──────────────────────────────────────────────────────────────
+'  3. DIAGRAMA DE ATIVIDADES — MENU PRINCIPAL
+' ──────────────────────────────────────────────────────────────
+@startuml 03_atividade_menu
+title Diagrama de Atividades — Menu Principal e Inicialização (agenda0.py)
+
+skinparam activityBackgroundColor #EAF4FF
+skinparam activityBorderColor #4A90D9
+skinparam activityDiamondBackgroundColor #FFF8DC
+skinparam activityDiamondBorderColor #E0A000
+skinparam ArrowColor #333333
+skinparam defaultFontSize 12
+
+start
+
+:Executar agenda0.py;
+:carregar_demo()\n[3 contatos de exemplo carregados\nem memória];
+
+note right
+  Sem verificação de arquivo —
+  dados demo sempre carregados
+end note
+
+repeat
+    :Exibir MENU PRINCIPAL\n[1] Adicionar\n[2] Listar\n[3] Buscar\n[4] Detalhes\n[5] Editar\n[6] Excluir\n[0] Sair;
+    :Ler opção do usuário;
+
+    if (opção == "1") then
+        :criar_contato();
+    elseif (opção == "2") then
+        :listar_contatos();
+    elseif (opção == "3") then
+        :buscar_contato();
+    elseif (opção == "4") then
+        :exibir_detalhes();
+    elseif (opção == "5") then
+        :editar_contato();
+    elseif (opção == "6") then
+        :excluir_contato();
+    elseif (opção == "0") then
+        :Exibir "Até logo!";
+    else (inválida)
+        :Exibir aviso\n"Opção inválida";
+        :pausar();
+    endif
+
+repeat while (opção != "0") is (continuar)
+->sair;
+
+note right
+  Todos os dados em memória
+  são perdidos ao sair
+end note
+
+stop
+@enduml
+
+
+' ──────────────────────────────────────────────────────────────
+'  4. DIAGRAMA DE ATIVIDADES — CRIAR CONTATO
+' ──────────────────────────────────────────────────────────────
+@startuml 04_atividade_criar
+title Diagrama de Atividades — criar_contato() (agenda0.py)
+
+skinparam activityBackgroundColor #E8FFE8
+skinparam activityBorderColor #2E8B57
+skinparam activityDiamondBackgroundColor #FFF8DC
+skinparam activityDiamondBorderColor #E0A000
+skinparam ArrowColor #333333
+
+start
+
+:cabecalho("NOVO CONTATO");
+
+if (len(agenda) >= CAPACIDADE?) then (sim)
+    :Exibir "Agenda cheia!";
+    :pausar();
+    stop
+else (não)
+endif
+
+:entrada("Nome");
+:nome = valor digitado;
+
+repeat
+    :entrada("E-mail");
+    if (validar_email(email)?) then (válido)
+    else (inválido)
+        :Exibir "E-mail inválido";
+    endif
+repeat while (email inválido?) is (sim)
+->não;
+
+repeat
+    :entrada("Telefone");
+    if (validar_telefone(tel)?) then (válido)
+    else (inválido)
+        :Exibir "Telefone inválido";
+    endif
+repeat while (telefone inválido?) is (sim)
+->não;
+
+:proximo_id() → novo ID;
+:Criar dict {id, nome, email, telefone};
+:agenda.append(contato);
+
+note right
+  Sem salvar_csv() —
+  dado fica somente
+  em memória
+end note
+
+:Exibir "Contato #N salvo!";
+:pausar();
+
+stop
+@enduml
+
+
+' ──────────────────────────────────────────────────────────────
+'  5. DIAGRAMA DE ATIVIDADES — EDITAR CONTATO
+' ──────────────────────────────────────────────────────────────
+@startuml 05_atividade_editar
+title Diagrama de Atividades — editar_contato() (agenda0.py)
+
+skinparam activityBackgroundColor #FFF0D0
+skinparam activityBorderColor #D08000
+skinparam activityDiamondBackgroundColor #EAF4FF
+skinparam activityDiamondBorderColor #4A90D9
+skinparam ArrowColor #333333
+
+start
+
+:cabecalho("EDITAR CONTATO");
+
+if (agenda vazia?) then (sim)
+    :Exibir "Nenhum contato para editar";
+    :pausar();
+    stop
+else (não)
+endif
+
+:entrada("ID do contato");
+
+if (ID é inteiro válido?) then (não)
+    :Exibir "ID inválido";
+    :pausar();
+    stop
+else (sim)
+endif
+
+:buscar_por_id(cid);
+
+if (contato encontrado?) then (não)
+    :Exibir "Contato #N não encontrado";
+    :pausar();
+    stop
+else (sim)
+endif
+
+:Exibir dados atuais do contato;
+note right: campos em branco\nmantêm o valor atual
+
+:entrada("Novo nome") [opcional];
+
+repeat
+    :entrada("Novo e-mail") [opcional];
+    if (vazio ou validar_email()?) then (ok)
+    else (inválido)
+        :Exibir "E-mail inválido";
+    endif
+repeat while (e-mail inválido?) is (sim)
+->não;
+
+repeat
+    :entrada("Novo telefone") [opcional];
+    if (vazio ou validar_telefone()?) then (ok)
+    else (inválido)
+        :Exibir "Telefone inválido";
+    endif
+repeat while (telefone inválido?) is (sim)
+->não;
+
+:Atualizar campos não-vazios no dict;
+
+note right
+  Sem salvar_csv() —
+  alteração existe
+  somente em memória
+end note
+
+:Exibir "Contato #N atualizado!";
+:pausar();
+
+stop
+@enduml
+
+
+' ──────────────────────────────────────────────────────────────
+'  6. DIAGRAMA DE ATIVIDADES — EXCLUIR CONTATO
+' ──────────────────────────────────────────────────────────────
+@startuml 06_atividade_excluir
+title Diagrama de Atividades — excluir_contato() (agenda0.py)
+
+skinparam activityBackgroundColor #FFE8E8
+skinparam activityBorderColor #CC3333
+skinparam activityDiamondBackgroundColor #FFF8DC
+skinparam activityDiamondBorderColor #E0A000
+skinparam ArrowColor #333333
+
+start
+
+:cabecalho("EXCLUIR CONTATO");
+
+if (agenda vazia?) then (sim)
+    :Exibir "Nenhum contato para excluir";
+    :pausar();
+    stop
+else (não)
+endif
+
+:entrada("ID do contato");
+
+if (ID é inteiro válido?) then (não)
+    :Exibir "ID inválido";
+    :pausar();
+    stop
+else (sim)
+endif
+
+:buscar_por_id(cid);
+
+if (contato encontrado?) then (não)
+    :Exibir "Contato #N não encontrado";
+    :pausar();
+    stop
+else (sim)
+endif
+
+:Exibir dados do contato\n(nome | e-mail | telefone);
+:entrada("Confirmar exclusão? (s/N)");
+
+if (confirmação == "s"?) then (sim)
+    :agenda.remove(contato);
+
+    note right
+      Sem salvar_csv() —
+      remoção existe
+      somente em memória
+    end note
+
+    :Exibir "Contato #N removido";
+else (não / outro)
+    :Exibir "Exclusão cancelada";
+endif
+
+:pausar();
+stop
+@enduml
+
+
+' ──────────────────────────────────────────────────────────────
+'  7. DIAGRAMA DE SEQUÊNCIA — INICIALIZAÇÃO
+' ──────────────────────────────────────────────────────────────
+@startuml 07_sequencia_inicializacao
+title Diagrama de Sequência — Inicialização (agenda0.py)
+
+skinparam sequenceArrowThickness 2
+skinparam sequenceParticipantBorderColor #4A90D9
+skinparam sequenceParticipantBackgroundColor #EAF4FF
+skinparam sequenceLifeLineBorderColor #4A90D9
+skinparam ArrowColor #333333
+skinparam defaultFontSize 12
+
+actor       "Usuário"        as U
+participant "__main__"        as MAIN
+participant "carregar_demo"   as DEMO
+collections "agenda[]"        as LISTA
+participant "menu_principal"  as MENU
+
+note over LISTA
+  Armazenamento
+  somente em memória
+  (sem arquivo CSV)
+end note
+
+U -> MAIN : python agenda0.py
+
+MAIN -> DEMO  : carregar_demo()
+DEMO -> LISTA : agenda.extend([\n  {id:1, Ana Silva, ...},\n  {id:2, Bruno Costa, ...},\n  {id:3, Carla Mendes, ...}\n])
+LISTA --> DEMO : lista com 3 contatos
+DEMO --> MAIN  : retorna
+
+note right of MAIN
+  Nenhuma mensagem
+  de inicialização —
+  vai direto ao menu
+end note
+
+MAIN -> MENU : menu_principal()
+MENU -> U    : exibe menu em loop
+@enduml
+
+
+' ──────────────────────────────────────────────────────────────
+'  8. DIAGRAMA DE SEQUÊNCIA — CRIAR CONTATO
+' ──────────────────────────────────────────────────────────────
+@startuml 08_sequencia_criar
+title Diagrama de Sequência — criar_contato() (agenda0.py)
+
+skinparam sequenceArrowThickness 2
+skinparam sequenceParticipantBorderColor #2E8B57
+skinparam sequenceParticipantBackgroundColor #E8FFE8
+skinparam sequenceLifeLineBorderColor #2E8B57
+skinparam ArrowColor #333333
+skinparam defaultFontSize 12
+
+actor       "Usuário"          as U
+participant "menu_principal"   as MENU
+participant "criar_contato"    as CR
+participant "validar_email"    as VE
+participant "validar_telefone" as VT
+participant "proximo_id"       as PID
+collections "agenda[]"         as LISTA
+
+note over LISTA
+  Único destino dos dados —
+  sem gravação em arquivo
+end note
+
+U -> MENU : seleciona opção "1"
+MENU -> CR : criar_contato()
+
+CR -> U : exibe cabecalho "NOVO CONTATO"
+
+alt agenda cheia (len >= 100)
+    CR -> U  : "Agenda cheia!"
+    CR -> U  : pausar()
+    CR --> MENU : return
+else há espaço
+    CR -> U   : entrada("Nome")
+    U --> CR  : nome digitado
+
+    loop até e-mail válido
+        CR -> U    : entrada("E-mail")
+        U --> CR   : email digitado
+        CR -> VE   : validar_email(email)
+        VE --> CR  : True / False
+        alt inválido
+            CR -> U : "E-mail inválido"
+        end
+    end
+
+    loop até telefone válido
+        CR -> U    : entrada("Telefone")
+        U --> CR   : telefone digitado
+        CR -> VT   : validar_telefone(tel)
+        VT --> CR  : True / False
+        alt inválido
+            CR -> U : "Telefone inválido"
+        end
+    end
+
+    CR -> PID   : proximo_id()
+    PID -> LISTA : max(c["id"] for c in agenda) + 1
+    LISTA --> PID : próximo ID
+    PID --> CR  : novo_id
+
+    CR -> LISTA : agenda.append({id, nome, email, telefone})
+
+    note right of LISTA
+      Dado salvo apenas
+      em memória RAM —
+      perdido ao encerrar
+    end note
+
+    CR -> U     : "Contato #N salvo com sucesso!"
+    CR -> U     : pausar()
+    CR --> MENU : return
+end
+@enduml
+
+
+' ──────────────────────────────────────────────────────────────
+'  9. DIAGRAMA DE SEQUÊNCIA — EDITAR CONTATO (sem persistência)
+' ──────────────────────────────────────────────────────────────
+@startuml 09_sequencia_editar
+title Diagrama de Sequência — editar_contato() (agenda0.py)
+
+skinparam sequenceArrowThickness 2
+skinparam sequenceParticipantBorderColor #D08000
+skinparam sequenceParticipantBackgroundColor #FFF0D0
+skinparam sequenceLifeLineBorderColor #D08000
+skinparam ArrowColor #333333
+skinparam defaultFontSize 12
+
+actor       "Usuário"          as U
+participant "menu_principal"   as MENU
+participant "editar_contato"   as ET
+participant "buscar_por_id"    as BPI
+participant "validar_email"    as VE
+participant "validar_telefone" as VT
+collections "agenda[]"         as LISTA
+
+note over LISTA
+  Armazenamento
+  somente em memória
+  (sem arquivo CSV)
+end note
+
+U -> MENU : seleciona opção "5"
+MENU -> ET : editar_contato()
+ET -> U    : exibe cabecalho "EDITAR CONTATO"
+
+alt agenda vazia
+    ET -> U     : "Nenhum contato para editar"
+    ET -> U     : pausar()
+    ET --> MENU : return
+else agenda tem contatos
+    ET -> U    : entrada("ID do contato a editar")
+    U --> ET   : valor digitado
+
+    alt ID não é inteiro válido
+        ET -> U     : "ID inválido"
+        ET -> U     : pausar()
+        ET --> MENU : return
+    else ID válido
+        ET -> BPI  : buscar_por_id(cid)
+        BPI -> LISTA : percorre agenda procurando id == cid
+        LISTA --> BPI : contato / None
+        BPI --> ET : contato / None
+
+        alt contato não encontrado (None)
+            ET -> U     : "Contato #N não encontrado"
+            ET -> U     : pausar()
+            ET --> MENU : return
+        else contato encontrado
+            ET -> U    : exibe dados atuais\n(nome, e-mail, telefone)
+            ET -> U    : entrada("Novo nome") [opcional]
+            U --> ET   : novo nome ou vazio
+
+            loop até e-mail válido ou vazio
+                ET -> U    : entrada("Novo e-mail") [opcional]
+                U --> ET   : novo e-mail ou vazio
+                ET -> VE   : validar_email(novo_email)
+                VE --> ET  : True / False
+                alt inválido (não-vazio e formato errado)
+                    ET -> U : "E-mail inválido"
+                end
+            end
+
+            loop até telefone válido ou vazio
+                ET -> U    : entrada("Novo telefone") [opcional]
+                U --> ET   : novo telefone ou vazio
+                ET -> VT   : validar_telefone(novo_tel)
+                VT --> ET  : True / False
+                alt inválido (não-vazio e formato errado)
+                    ET -> U : "Telefone inválido"
+                end
+            end
+
+            ET -> LISTA : atualiza campos não-vazios no dict
+
+            note right of LISTA
+              Sem salvar_csv() —
+              alteração existe
+              somente em memória
+            end note
+
+            ET -> U     : "Contato #N atualizado!"
+            ET -> U     : pausar()
+            ET --> MENU : return
+        end
+    end
+end
+@enduml
+
+
+' ──────────────────────────────────────────────────────────────
+'  10. DIAGRAMA DE SEQUÊNCIA — EXCLUIR CONTATO (sem persistência)
+' ──────────────────────────────────────────────────────────────
+@startuml 10_sequencia_excluir
+title Diagrama de Sequência — excluir_contato() (agenda0.py)
+
+skinparam sequenceArrowThickness 2
+skinparam sequenceParticipantBorderColor #CC3333
+skinparam sequenceParticipantBackgroundColor #FFE8E8
+skinparam sequenceLifeLineBorderColor #CC3333
+skinparam ArrowColor #333333
+skinparam defaultFontSize 12
+
+actor       "Usuário"          as U
+participant "menu_principal"   as MENU
+participant "excluir_contato"  as EX
+participant "buscar_por_id"    as BPI
+collections "agenda[]"         as LISTA
+
+note over LISTA
+  Armazenamento
+  somente em memória
+  (sem arquivo CSV)
+end note
+
+U -> MENU : seleciona opção "6"
+MENU -> EX : excluir_contato()
+EX -> U    : exibe cabecalho "EXCLUIR CONTATO"
+
+alt agenda vazia
+    EX -> U     : "Nenhum contato para excluir"
+    EX -> U     : pausar()
+    EX --> MENU : return
+else agenda tem contatos
+    EX -> U    : entrada("ID do contato a excluir")
+    U --> EX   : valor digitado
+
+    alt ID não é inteiro válido
+        EX -> U     : "ID inválido"
+        EX -> U     : pausar()
+        EX --> MENU : return
+    else ID válido
+        EX -> BPI  : buscar_por_id(cid)
+        BPI -> LISTA : percorre agenda procurando id == cid
+        LISTA --> BPI : contato / None
+        BPI --> EX : contato / None
+
+        alt contato não encontrado (None)
+            EX -> U     : "Contato #N não encontrado"
+            EX -> U     : pausar()
+            EX --> MENU : return
+        else contato encontrado
+            EX -> U    : exibe dados do contato\n(nome | e-mail | telefone)
+            EX -> U    : entrada("Confirmar exclusão? (s/N)")
+            U --> EX   : resposta
+
+            alt confirmação == "s"
+                EX -> LISTA : agenda.remove(contato)
+
+                note right of LISTA
+                  Sem salvar_csv() —
+                  remoção existe
+                  somente em memória
+                end note
+
+                EX -> U     : "Contato #N removido"
+            else qualquer outro valor
+                EX -> U     : "Exclusão cancelada"
+            end
+
+            EX -> U     : pausar()
+            EX --> MENU : return
+        end
+    end
+end
+@enduml
