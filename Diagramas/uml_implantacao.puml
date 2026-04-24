@@ -1,0 +1,91 @@
+@startuml uc_implantacao
+title Diagrama de Implantacao — Agenda Web
+
+skinparam nodeBorderColor #1a56db
+skinparam nodeBackgroundColor #e0e7ff
+skinparam artifactBorderColor #374151
+skinparam artifactBackgroundColor #f9fafb
+skinparam componentBorderColor #059669
+skinparam componentBackgroundColor #d1fae5
+skinparam databaseBorderColor #374151
+skinparam databaseBackgroundColor #f3f4f6
+skinparam arrowColor #374151
+skinparam noteBorderColor #d1d5db
+skinparam noteBackgroundColor #fffbeb
+skinparam defaultFontSize 13
+
+' ── No cliente ────────────────────────────────────────────────────
+node "Dispositivo Cliente" <<device>> as NCliente {
+    node "Sistema Operacional" <<OS>> as SOCliente {
+        component "Navegador Web\n(Firefox / Chrome / Safari)" as Browser
+    }
+}
+
+' ── Rede local — alias obrigatorio para uso em setas ──────────────
+node "Rede Local  LAN" <<network>> as LAN {
+}
+
+' ── No servidor ───────────────────────────────────────────────────
+node "Maquina Servidora  192.168.x.x" <<device>> as NServidor {
+
+    node "Sistema Operacional Linux" <<OS>> as SOServidor {
+
+        node "Processo Python 3" <<process>> as ProcPython {
+
+            component "HTTPServer  stdlib" as HttpServer
+            component "AgendaHandler  Controller" as Handler
+            component "View  html_listar / html_formulario\nhtml_buscar / html_confirmar" as View
+            component "Model  agenda[] + validacoes" as Model
+            component "Inicializador  encontrar_porta_livre" as Init
+        }
+
+        database "agenda_web.csv\n(diretorio de trabalho)" as CsvFile
+
+        artifact "agenda_web.py\n(codigo-fonte unico)" as Source
+    }
+
+    note right of Source
+      Um unico arquivo .py contem
+      Model, View, Controller,
+      templates HTML e o
+      inicializador de porta.
+    end note
+}
+
+' ── Comunicacao externa ───────────────────────────────────────────
+Browser    -down->  LAN        : TCP/IP
+LAN        -down->  HttpServer : HTTP — porta aleatoria 18000-28000
+
+' ── Comunicacao interna ───────────────────────────────────────────
+HttpServer -down->  Handler    : delega requisicao
+Handler    -right-> View       : gera HTML
+Handler    -down->  Model      : le / escreve agenda[]
+Model      -down->  CsvFile    : leitura / escrita UTF-8
+Init       -right-> HttpServer : bind 0.0.0.0 porta
+
+' ── Rotas expostas pelo Handler (como notas) ─────────────────────
+note bottom of Handler
+  Rotas GET:
+    /  /listar  /novo
+    /editar?id=N
+    /excluir?id=N
+    /buscar?q=T
+  Rotas POST:
+    /novo  /editar  /excluir
+end note
+
+note bottom of CsvFile
+  Regravado integralmente
+  a cada operacao de escrita
+  (criar, editar, excluir).
+end note
+
+note left of Init
+  IP real detectado via
+  socket UDP para 8.8.8.8
+  sem enviar dados.
+  bind 0.0.0.0 aceita
+  qualquer interface.
+end note
+
+@enduml

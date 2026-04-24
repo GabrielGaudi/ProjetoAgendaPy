@@ -1,0 +1,141 @@
+@startuml uc_atividades
+title Diagrama de Atividades — Agenda Web
+
+skinparam activityBorderColor #1a56db
+skinparam activityBackgroundColor #e0e7ff
+skinparam activityDiamondBorderColor #374151
+skinparam activityDiamondBackgroundColor #fffbeb
+skinparam arrowColor #1a56db
+skinparam partitionBorderColor #9ca3af
+skinparam partitionBackgroundColor #f9fafb
+skinparam noteBorderColor #d1d5db
+skinparam noteBackgroundColor #fffbeb
+skinparam defaultFontSize 13
+
+|Inicialização|
+start
+
+:Executar agenda_web.py;
+
+if (agenda_web.csv existe?) then (sim)
+    :carregar_csv()\n→ popula lista agenda[];
+else (não)
+    :carregar_demo()\n→ 3 contatos de exemplo;
+    :salvar_csv();
+endif
+
+:Sortear porta aleatória\n[18 000 – 28 000];
+
+repeat
+    :Testar porta com socket.bind();
+    if (porta livre?) then (sim)
+    else (não)
+        :Sortear nova porta;
+    endif
+repeat while (porta ocupada?) is (sim)
+->não (livre);
+
+:HTTPServer("0.0.0.0", porta);
+:Detectar IP da interface padrão\n(socket UDP → 8.8.8.8);
+:Exibir URL no console\nhttp://<ip>:<porta>;
+
+|Servidor em execução|
+
+:serve_forever()\naguardar requisição;
+
+while (servidor ativo?) is (sim)
+
+    :Receber requisição HTTP;
+
+    if (método?) then (GET)
+
+        if (rota?) then (/ ou /listar)
+            :Ler ?msg= e ?erro= da query string;
+            :html_listar()\n→ tabela com todos os contatos;
+            :HTTP 200 + HTML;
+
+        elseif (/novo)
+            :html_formulario("/novo")\n→ form em branco;
+            :HTTP 200 + HTML;
+
+        elseif (/editar?id=N)
+            :buscar_por_id(N);
+            if (encontrado?) then (sim)
+                :html_formulario("/editar", contato)\n→ form pré-preenchido;
+                :HTTP 200 + HTML;
+            else (não)
+                :Redirect 303 → /listar?erro=...;
+            endif
+
+        elseif (/excluir?id=N)
+            :buscar_por_id(N);
+            if (encontrado?) then (sim)
+                :html_confirmar_exclusao()\n→ tela de confirmação;
+                :HTTP 200 + HTML;
+            else (não)
+                :Redirect 303 → /listar?erro=...;
+            endif
+
+        elseif (/buscar?q=TERMO)
+            if (termo informado?) then (sim)
+                :Filtrar agenda[]\npor nome ou e-mail;
+                :html_buscar(termo, resultados);
+            else (não)
+                :html_buscar() — form vazio;
+            endif
+            :HTTP 200 + HTML;
+
+        else (404)
+            :HTTP 404 + mensagem;
+        endif
+
+    else (POST)
+
+        :_ler_post()\n→ decodifica campos do formulário;
+
+        if (rota POST?) then (/novo)
+            if (campos preenchidos?) then (não)
+                :Reexibir form\ncom mensagem de erro;
+            elseif (e-mail válido?) then (não)
+                :Reexibir form\ncom erro de e-mail;
+            elseif (telefone válido?) then (não)
+                :Reexibir form\ncom erro de telefone;
+            elseif (agenda cheia?) then (sim)
+                :Redirect 303 → /listar?erro=Agenda cheia;
+            else (tudo ok)
+                :proximo_id();
+                :agenda.append(novo_contato);
+                :salvar_csv();
+                :Redirect 303 → /listar?msg=Criado;
+            endif
+
+        elseif (/editar)
+            :buscar_por_id(id);
+            if (encontrado e dados válidos?) then (sim)
+                :Atualizar dict na lista agenda[];
+                :salvar_csv();
+                :Redirect 303 → /listar?msg=Atualizado;
+            else (não)
+                :Reexibir form\ncom mensagem de erro;
+            endif
+
+        elseif (/excluir)
+            :buscar_por_id(id);
+            if (encontrado?) then (sim)
+                :agenda.remove(contato);
+                :salvar_csv();
+            endif
+            :Redirect 303 → /listar?msg=Removido;
+
+        endif
+
+    endif
+
+endwhile (não — Ctrl+C)
+
+|Encerramento|
+:servidor.shutdown();
+:Exibir mensagem de encerramento;
+stop
+
+@enduml

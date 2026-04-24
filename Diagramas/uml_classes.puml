@@ -1,0 +1,144 @@
+@startuml uc_classes
+title Diagrama de Classes — Agenda Web
+
+skinparam classAttributeIconSize 0
+skinparam classBorderColor #1a56db
+skinparam classBackgroundColor #e0e7ff
+skinparam classHeaderBackgroundColor #1a56db
+skinparam classHeaderFontColor #ffffff
+skinparam packageBorderColor #9ca3af
+skinparam packageBackgroundColor #f9fafb
+skinparam arrowColor #374151
+skinparam noteBorderColor #d1d5db
+skinparam noteBackgroundColor #fffbeb
+skinparam defaultFontSize 13
+
+' ── Biblioteca padrão (externo) ───────────────────────────────────────────────
+package "http.server  (stdlib)" <<External>> {
+    class BaseHTTPRequestHandler {
+        +send_response(code)
+        +send_header(k, v)
+        +end_headers()
+        +rfile
+        +wfile
+        +headers
+        +path
+    }
+    class HTTPServer {
+        +server_address : tuple
+        +serve_forever()
+        +shutdown()
+    }
+}
+
+' ── Controller ────────────────────────────────────────────────────────────────
+package "Controller" <<Controller>> {
+    class AgendaHandler {
+        ' Herda de BaseHTTPRequestHandler
+        --
+        +do_GET()  : None
+        +do_POST() : None
+        --
+        -_responder(html, status) : None
+        -_redirecionar(url)       : None
+        -_ler_post()              : dict
+        -log_message(fmt, *args)  : None
+    }
+}
+
+AgendaHandler --|> BaseHTTPRequestHandler : herda
+
+' ── View ─────────────────────────────────────────────────────────────────────
+package "View" <<View>> {
+    class TemplatesHTML <<utility>> {
+        +html_listar(msg, erro)          : str
+        +html_formulario(acao, contato,\n        erro)  : str
+        +html_confirmar_exclusao(contato): str
+        +html_buscar(termo, resultados)  : str
+        --
+        -{static} _base(titulo, corpo, ativo) : str
+        -{static} _nav(ativo)                 : str
+        -{static} _CSS                        : str
+        -{static} _mensagem(msg, tipo)        : str
+    }
+}
+
+' ── Model ────────────────────────────────────────────────────────────────────
+package "Model" <<Model>> {
+
+    class Contato <<datatype>> {
+        +id       : int
+        +nome     : str
+        +email    : str
+        +telefone : str
+    }
+
+    class AgendaModel <<utility>> {
+        -{static} agenda      : list
+        -{static} CAPACIDADE  : int = 100
+        -{static} ARQUIVO_CSV : str = "agenda_web.csv"
+        --
+        +proximo_id()              : int
+        +buscar_por_id(cid)        : dict | None
+        +salvar_csv()              : None
+        +carregar_csv()            : bool
+        +carregar_demo()           : None
+    }
+
+    class Validacao <<utility>> {
+        -{static} RE_EMAIL    : Pattern
+        -{static} RE_TELEFONE : Pattern
+        --
+        +validar_email(email)    : bool
+        +validar_telefone(tel)   : bool
+    }
+}
+
+' ── Inicializador ─────────────────────────────────────────────────────────────
+package "Inicializador" <<Startup>> {
+    class PortaSelector <<utility>> {
+        -{static} PORTA_MIN : int = 18000
+        -{static} PORTA_MAX : int = 28000
+        --
+        +porta_esta_livre(porta) : bool
+        +encontrar_porta_livre() : int
+    }
+}
+
+' ── Artefato de dados ─────────────────────────────────────────────────────────
+class "agenda_web.csv" <<artifact>> {
+    id, nome, email, telefone
+}
+
+' ── Relacionamentos ───────────────────────────────────────────────────────────
+
+' Controller usa View para gerar respostas
+AgendaHandler ..> TemplatesHTML   : <<usa>>
+
+' Controller usa Model para ler/escrever dados
+AgendaHandler ..> AgendaModel     : <<usa>>
+AgendaHandler ..> Validacao       : <<usa>>
+
+' Model agrega Contatos (lista de dicionários)
+AgendaModel "1" o-- "0..100" Contato : agenda[]
+
+' Model persiste em CSV
+AgendaModel ..> "agenda_web.csv"  : <<persiste>>
+
+' Inicializador cria o servidor
+PortaSelector ..> HTTPServer      : <<configura>>
+
+note bottom of AgendaModel
+  Em Python os atributos e métodos
+  são variáveis e funções de módulo.
+  Agrupados aqui como classe para
+  clareza do diagrama MVC.
+end note
+
+note right of Contato
+  Implementado como dict{}
+  em Python. Campos fixos:
+  id, nome, email, telefone.
+end note
+
+@enduml

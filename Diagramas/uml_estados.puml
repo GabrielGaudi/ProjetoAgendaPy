@@ -1,0 +1,141 @@
+@startuml uc_estados
+title Diagrama de Máquina de Estados — Agenda Web
+
+skinparam stateBorderColor #1a56db
+skinparam stateBackgroundColor #e0e7ff
+skinparam stateArrowColor #374151
+skinparam stateStartColor #111827
+skinparam stateEndColor #111827
+skinparam noteBorderColor #d1d5db
+skinparam noteBackgroundColor #fffbeb
+skinparam defaultFontSize 13
+
+' ═══════════════════════════════════════════════════════════════════
+'  MÁQUINA 1 — Ciclo de vida do SERVIDOR
+' ═══════════════════════════════════════════════════════════════════
+
+state "Ciclo de Vida do Servidor" as SM_Servidor {
+
+    [*] --> Inicializando
+
+    state Inicializando {
+        state "Carregando Dados" as CD
+        state "Selecionando Porta" as SP
+
+        [*] --> CD
+        CD --> SP : carregar_csv() OK\nou carregar_demo()
+        SP --> SP : porta ocupada → novo sorteio
+        SP --> [*] : porta livre encontrada
+    }
+
+    Inicializando --> Aguardando : HTTPServer\nserve_forever()
+
+    note right of Aguardando
+      bind em 0.0.0.0
+      aceita qualquer
+      interface de rede
+    end note
+
+    state Aguardando : serve_forever()\nesperando conexão TCP
+
+    Aguardando --> Processando : requisição HTTP recebida
+
+    state Processando {
+        state "Roteando" as RT
+
+        state "Executando GET" as EG {
+            state "Renderizando View" as RV
+        }
+
+        state "Executando POST" as EP {
+            state "Validando Campos" as VC
+            state "Atualizando Model" as AM
+            state "Persistindo CSV" as PC
+            state "Preparando Redirect" as PR
+
+            [*]  --> VC
+            VC   --> AM : dados válidos
+            VC   --> RV : dados inválidos\n(reexibe form com erro)
+            AM   --> PC
+            PC   --> PR
+        }
+
+        [*]  --> RT
+        RT   --> EG : método GET
+        RT   --> EP : método POST
+        EG   --> [*]
+        EP   --> [*]
+    }
+
+    Processando --> Aguardando : resposta enviada\n(HTTP 200 ou 303)
+
+    Aguardando --> Encerrando : Ctrl+C\n(KeyboardInterrupt)
+
+    state Encerrando : servidor.shutdown()\nmensagem de saída
+    Encerrando --> [*]
+}
+
+' ═══════════════════════════════════════════════════════════════════
+'  MÁQUINA 2 — Ciclo de vida de um CONTATO
+' ═══════════════════════════════════════════════════════════════════
+
+state "Ciclo de Vida do Contato" as SM_Contato {
+
+    [*] --> Inexistente
+
+    state Inexistente : não está em agenda[]
+
+    Inexistente --> Criando : POST /novo\n(campos submetidos)
+
+    state Criando {
+        state "Campos Incompletos" as CI
+        state "E-mail Inválido"    as EI
+        state "Telefone Inválido"  as TI
+        state "Agenda Cheia"       as AC
+        state "Dados Aceitos"      as DA
+
+        [*] --> CI   : nome/email/tel ausente
+        [*] --> EI   : RE_EMAIL não casa
+        [*] --> TI   : RE_TELEFONE não casa
+        [*] --> AC   : len(agenda) >= 100
+        [*] --> DA   : todos os campos válidos
+        CI  --> [*]
+        EI  --> [*]
+        TI  --> [*]
+        AC  --> [*]
+        DA  --> [*]
+    }
+
+    Criando --> Persistido   : agenda.append()\nsalvar_csv()
+    Criando --> Inexistente  : validação falhou\nou agenda cheia
+
+    state Persistido : contato em agenda[]\ne em agenda_web.csv
+
+    Persistido --> Editando : POST /editar\n(campos submetidos)
+
+    state Editando {
+        state "Campos Inválidos"  as CEI
+        state "Dados Aceitos"     as DEA
+
+        [*] --> CEI : validação falhou
+        [*] --> DEA : dados válidos
+        CEI --> [*]
+        DEA --> [*]
+    }
+
+    Editando --> Persistido  : contato atualizado\nsalvar_csv()
+    Editando --> Persistido  : validação falhou\n(sem alteração)
+
+    Persistido --> Confirmando : GET /excluir?id=N\n(exibe tela de confirmação)
+
+    state Confirmando : aguardando\nconfirmação do usuário
+
+    Confirmando --> Persistido  : usuário cancela\n(GET /listar)
+    Confirmando --> Removendo   : POST /excluir\n(confirma)
+
+    state Removendo : agenda.remove()\nsalvar_csv()
+
+    Removendo --> Inexistente
+}
+
+@enduml

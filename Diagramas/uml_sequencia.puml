@@ -1,0 +1,155 @@
+@startuml uc_sequencia
+title Diagrama de Sequência — Agenda Web\n(fluxos completos: Criar, Editar, Excluir e Buscar)
+
+skinparam sequenceArrowColor #1a56db
+skinparam sequenceLifeLineBorderColor #9ca3af
+skinparam sequenceParticipantBorderColor #1a56db
+skinparam sequenceParticipantBackgroundColor #e0e7ff
+skinparam sequenceActorBorderColor #374151
+skinparam sequenceGroupBorderColor #d1d5db
+skinparam sequenceGroupBackgroundColor #f9fafb
+skinparam noteBorderColor #d1d5db
+skinparam noteBackgroundColor #fffbeb
+skinparam defaultFontSize 12
+
+actor       "Usuário"          as U
+participant "Navegador"        as B
+participant "AgendaHandler\n(Controller)" as C
+participant "Model\n(agenda[])" as M
+participant "View\n(html_*)"   as V
+database    "agenda_web.csv"   as CSV
+
+== Inicialização ==
+
+[-> C : python agenda_web.py
+activate C
+C -> CSV   : carregar_csv()
+alt arquivo existe
+    CSV --> C : rows
+    C -> M : agenda.extend(rows)
+else primeira execução
+    C -> M : carregar_demo()
+    C -> CSV : salvar_csv()
+end
+C -> C : encontrar_porta_livre()\nsocket.bind() por porta aleatória
+C -> C : socket UDP → 8.8.8.8\nip_rede = getsockname()[0]
+C -> C : HTTPServer("0.0.0.0", porta)\nserve_forever()
+note right of C : URL exibida no console:\nhttp://<ip>:<porta>
+deactivate C
+
+== UC01 — Listar Contatos (GET /listar) ==
+
+U -> B  : digita URL no navegador
+B -> C  : GET /listar
+activate C
+C -> M  : lê agenda[]
+M --> C : list[dict]
+C -> V  : html_listar(msg, erro)
+activate V
+V --> C : HTML (tabela de contatos)
+deactivate V
+C --> B : HTTP 200 + HTML
+deactivate C
+B --> U : exibe tabela
+
+== UC02 — Adicionar Contato ==
+
+U -> B  : clica "Novo Contato"
+B -> C  : GET /novo
+activate C
+C -> V  : html_formulario("/novo")
+V --> C : HTML (formulário vazio)
+C --> B : HTTP 200 + HTML
+deactivate C
+B --> U : exibe formulário
+
+U -> B  : preenche e submete
+B -> C  : POST /novo  {nome, email, telefone}
+activate C
+C -> C  : _ler_post()
+
+alt campos inválidos
+    C -> V : html_formulario(erro=...)
+    V --> C : HTML
+    C --> B : HTTP 200 + HTML (re-exibe com erro)
+else dados válidos
+    C -> M  : validar_email() + validar_telefone()
+    M --> C : True
+    C -> M  : proximo_id()
+    M --> C : novo_id
+    C -> M  : agenda.append(contato)
+    C -> CSV: salvar_csv()
+    C --> B : HTTP 303 → /listar?msg=Criado
+end
+deactivate C
+
+B -> C  : GET /listar?msg=Criado
+activate C
+C -> V  : html_listar(msg="Criado ✅")
+V --> C : HTML
+C --> B : HTTP 200 + HTML
+deactivate C
+B --> U : tabela com mensagem de sucesso
+
+== UC03 — Editar Contato ==
+
+U -> B  : clica "✏️ Editar" (id=N)
+B -> C  : GET /editar?id=N
+activate C
+C -> M  : buscar_por_id(N)
+M --> C : contato dict
+C -> V  : html_formulario("/editar", contato)
+V --> C : HTML (form pré-preenchido)
+C --> B : HTTP 200 + HTML
+deactivate C
+B --> U : exibe formulário preenchido
+
+U -> B  : altera campos e submete
+B -> C  : POST /editar  {id, nome, email, telefone}
+activate C
+C -> M  : buscar_por_id(id)
+M --> C : contato dict
+C -> M  : validar_email() + validar_telefone()
+M --> C : True
+C -> M  : contato["nome"] = ...\ncontato["email"] = ...\ncontato["telefone"] = ...
+C -> CSV: salvar_csv()
+C --> B : HTTP 303 → /listar?msg=Atualizado
+deactivate C
+
+== UC04 — Excluir Contato ==
+
+U -> B  : clica "🗑️ Excluir" (id=N)
+B -> C  : GET /excluir?id=N
+activate C
+C -> M  : buscar_por_id(N)
+M --> C : contato dict
+C -> V  : html_confirmar_exclusao(contato)
+V --> C : HTML (tela de confirmação)
+C --> B : HTTP 200 + HTML
+deactivate C
+B --> U : exibe dados + botão confirmar
+
+U -> B  : clica "Confirmar Exclusão"
+B -> C  : POST /excluir  {id=N}
+activate C
+C -> M  : buscar_por_id(N)
+M --> C : contato dict
+C -> M  : agenda.remove(contato)
+C -> CSV: salvar_csv()
+C --> B : HTTP 303 → /listar?msg=Removido
+deactivate C
+
+== UC05 — Buscar Contato ==
+
+U -> B  : clica "Buscar", digita termo
+B -> C  : GET /buscar?q=TERMO
+activate C
+C -> M  : filtra agenda[]\npor nome.lower() ou email.lower()
+M --> C : list[dict] resultados
+C -> V  : html_buscar(termo, resultados)
+V --> C : HTML (tabela filtrada)
+C --> B : HTTP 200 + HTML
+deactivate C
+B --> U : exibe resultados
+
+@enduml

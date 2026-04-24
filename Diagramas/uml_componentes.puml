@@ -1,0 +1,103 @@
+@startuml uc_componentes
+title Diagrama de Componentes — Agenda Web
+
+skinparam componentStyle rectangle
+skinparam componentBorderColor #1a56db
+skinparam componentBackgroundColor #e0e7ff
+skinparam packageBorderColor #9ca3af
+skinparam packageBackgroundColor #f9fafb
+skinparam arrowColor #1a56db
+skinparam noteBorderColor #d1d5db
+skinparam noteBackgroundColor #fffbeb
+skinparam defaultFontSize 13
+
+node "Maquina do Usuario" {
+    [Navegador Web] as Browser
+}
+
+node "Servidor  (0.0.0.0 : porta aleatoria 18000-28000)" {
+
+    package "Inicializacao" <<Startup>> {
+        [porta_esta_livre()]      as PortaTeste
+        [encontrar_porta_livre()] as PortaSeletor
+        [carregar_csv() /\ncarregar_demo()] as Loader
+    }
+
+    package "Controller" <<Controller>> {
+        [AgendaHandler\n(BaseHTTPRequestHandler)] as Handler
+        component "do_GET()"  as GET
+        component "do_POST()" as POST
+        component "_ler_post()\n_responder()\n_redirecionar()" as Helpers
+    }
+
+    package "View" <<View>> {
+        [html_listar()]              as VLista
+        [html_formulario()]          as VForm
+        [html_confirmar_exclusao()]  as VConfirm
+        [html_buscar()]              as VBusca
+        [_base() / _nav() / CSS]     as VBase
+    }
+
+    package "Model" <<Model>> {
+        [agenda : list of dict\n{ id, nome, email, telefone }] as AgendaMem
+        [validar_email()\nvalidar_telefone()]  as Validators
+        [proximo_id()\nbuscar_por_id()]        as Helpers2
+        [salvar_csv()\ncarregar_csv()]         as CsvOps
+    }
+
+    database "agenda_web.csv" as ArqCSV
+    [HTTPServer\n(stdlib)]    as HttpServer
+}
+
+' Comunicacao externa
+Browser    -right-> HttpServer : HTTP Request (GET / POST)
+HttpServer -right-> Browser    : HTTP Response (HTML 200 / Redirect 303)
+
+' Inicializacao
+PortaSeletor --> PortaTeste  : testa bind()
+PortaSeletor --> HttpServer  : configura porta
+Loader       --> AgendaMem   : popula lista
+
+' Controller interno
+HttpServer --> Handler  : delega requisicao
+Handler    --> GET
+Handler    --> POST
+GET        --> Helpers
+POST       --> Helpers
+
+' Controller -> View
+GET  --> VLista   : / ou /listar
+GET  --> VForm    : /novo ou /editar
+GET  --> VConfirm : /excluir (GET)
+GET  --> VBusca   : /buscar
+
+' View -> base
+VLista   --> VBase
+VForm    --> VBase
+VConfirm --> VBase
+VBusca   --> VBase
+
+' Controller -> Model
+POST --> Validators : valida campos
+POST --> AgendaMem  : append / update / remove
+POST --> CsvOps     : salvar_csv()
+GET  --> Helpers2   : buscar_por_id()
+GET  --> AgendaMem  : le lista para renderizar
+
+' Model -> disco
+CsvOps --> ArqCSV : leitura / escrita
+
+note right of AgendaMem
+  Estrutura identica ao
+  programa original (CLI):
+  lista de dicionarios
+  em memoria
+end note
+
+note bottom of PortaSeletor
+  Sorteia porta aleatoria e
+  testa disponibilidade via
+  socket.bind() antes de usar
+end note
+
+@enduml

@@ -1,0 +1,65 @@
+@startuml uc_caso_de_uso
+title Diagrama de Caso de Uso — Agenda Web
+
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecaseBorderColor #1a56db
+skinparam usecaseBackgroundColor #e0e7ff
+skinparam usecaseFontSize 13
+skinparam arrowColor #1a56db
+skinparam actorBorderColor #374151
+skinparam actorFontSize 13
+
+actor "Usuário\n(Navegador)" as U
+
+rectangle "Agenda Web  [agenda_web.py]" {
+
+    usecase "UC01\nListar Contatos"      as UC01
+    usecase "UC02\nAdicionar Contato"    as UC02
+    usecase "UC03\nEditar Contato"       as UC03
+    usecase "UC04\nExcluir Contato"      as UC04
+    usecase "UC05\nBuscar Contato"       as UC05
+
+    usecase "UC06\nValidar E-mail"       as UC06  #fffbeb
+    usecase "UC07\nValidar Telefone"     as UC07  #fffbeb
+    usecase "UC08\nPersistir em CSV"     as UC08  #f0fdf4
+    usecase "UC09\nCarregar CSV"         as UC09  #f0fdf4
+    usecase "UC10\nConfirmar Exclusão"   as UC10  #fff1f2
+}
+
+' Associações do ator
+U --> UC01
+U --> UC02
+U --> UC03
+U --> UC04
+U --> UC05
+
+' Include — validação obrigatória em criar e editar
+UC02 .> UC06 : <<include>>
+UC02 .> UC07 : <<include>>
+UC03 .> UC06 : <<include>>
+UC03 .> UC07 : <<include>>
+
+' Include — persistência após criar, editar e excluir
+UC02 .> UC08 : <<include>>
+UC03 .> UC08 : <<include>>
+UC04 .> UC08 : <<include>>
+
+' Extend — confirmação antes de excluir
+UC10 .> UC04 : <<extend>>
+
+' Include — carga inicial dos dados
+UC01 .> UC09 : <<include>>
+
+note bottom of UC08
+  Regrava o arquivo
+  agenda_web.csv
+  integralmente
+end note
+
+note right of UC09
+  Executado uma única vez
+  na inicialização do servidor
+end note
+
+@enduml
