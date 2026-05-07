@@ -1,0 +1,25 @@
+@startuml
+title Diagrama de Máquina de Estados - Navegação do Menu
+
+[*] --> Menu
+
+state Menu {
+    [*] --> EsperandoOpcao
+    EsperandoOpcao --> Adicionar : selecionar 1
+    EsperandoOpcao --> Listar : selecionar 2
+    EsperandoOpcao --> Buscar : selecionar 3
+    EsperandoOpcao --> Detalhes : selecionar 4
+    EsperandoOpcao --> Editar : selecionar 5
+    EsperandoOpcao --> Excluir : selecionar 6
+    EsperandoOpcao --> Sair : selecionar 0
+}
+
+Adicionar --> Menu : contato salvo
+Listar --> Menu : pressionar ENTER
+Buscar --> Menu : pressionar ENTER
+Detalhes --> Menu : pressionar ENTER
+Editar --> Menu : contato salvo
+Excluir --> Menu : confirmado/cancelado
+Sair --> [*]
+
+@enduml

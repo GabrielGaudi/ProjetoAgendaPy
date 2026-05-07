@@ -1,0 +1,35 @@
+@startuml
+title Diagrama de Atividade - Criar Contato
+
+start
+:Mostrar menu principal;
+:Selecionar 'Adicionar contato';
+:Solicitar nome;
+repeat
+  :Solicitar e-mail;
+  if (E-mail válido?) then (sim)
+  else
+    :Exibir erro de e-mail;
+  endif
+repeat while (E-mail inválido?)
+repeat
+  :Solicitar telefone;
+  if (Telefone válido?) then (sim)
+  else
+    :Exibir erro de telefone;
+  endif
+repeat while (Telefone inválido?)
+repeat
+  :Solicitar CEP;
+  if (CEP válido?) then (sim)
+  else
+    :Exibir erro de CEP;
+  endif
+repeat while (CEP inválido?)
+:Solicitar rua, bairro, número, complemento, cidade e UF;
+:Salvar contato na agenda;
+:Salvar arquivo CSV;
+:Mostrar mensagem de sucesso;
+stop
+
+@enduml

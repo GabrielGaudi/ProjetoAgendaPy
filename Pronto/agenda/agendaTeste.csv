@@ -1,0 +1,4 @@
+id,nome,email,telefone,cep,rua,bairro,numero,complemento,cidade,uf
+1,Ana Silva,ana@email.com,(11) 91234-5678,06030-260,Rua das Flores,Centro,123,Apto 45,São Paulo,SP
+2,Bruno Costa,bruno@email.com,(21) 98765-4321,20000-000,Av. Rio Branco,Centro,456,,Rio de Janeiro,RJ
+3,Carla Mendes,carla@email.com,(31) 97654-3210,30000-000,Rua da Bahia,Savassi,789,Casa,Belo Horizonte,MG

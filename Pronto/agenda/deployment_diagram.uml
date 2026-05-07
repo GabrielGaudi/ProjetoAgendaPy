@@ -1,0 +1,13 @@
+@startuml
+title Diagrama de Implantação
+
+node "Terminal / Console" as Cliente
+node "Servidor Local" as ServidorLocal {
+    node "Python Runtime" as PythonRuntime
+    artifact "agendaTeste.csv" as ArquivoCSV
+}
+
+Cliente --> PythonRuntime
+PythonRuntime --> ArquivoCSV
+
+@enduml

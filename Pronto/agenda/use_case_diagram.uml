@@ -1,0 +1,22 @@
+@startuml
+title Diagrama de Caso de Uso
+
+actor Usuario as U
+
+usecase "Adicionar contato" as UC1
+usecase "Listar contatos" as UC2
+usecase "Buscar contato" as UC3
+usecase "Ver detalhes" as UC4
+usecase "Editar contato" as UC5
+usecase "Excluir contato" as UC6
+usecase "Sair" as UC7
+
+U --> UC1
+U --> UC2
+U --> UC3
+U --> UC4
+U --> UC5
+U --> UC6
+U --> UC7
+
+@enduml

@@ -1,0 +1,33 @@
+@startuml
+title Diagrama de Sequência - Adicionar Contato
+
+actor Usuário as U
+participant Interface as I
+participant CRUD as C
+participant Validador as V
+participant Persistência as P
+
+U -> I: Seleciona adicionar contato
+I -> U: Solicita nome
+U -> I: Digita nome
+I -> U: Solicita e-mail
+U -> I: Digita e-mail
+I -> V: Validar e-mail
+V --> I: E-mail válido
+I -> U: Solicita telefone
+U -> I: Digita telefone
+I -> V: Validar telefone
+V --> I: Telefone válido
+I -> U: Solicita CEP
+U -> I: Digita CEP
+I -> V: Validar CEP
+V --> I: CEP válido
+I -> U: Solicita endereço completo
+U -> I: Digita rua, bairro, número, complemento, cidade e UF
+I -> C: Criar objeto contato
+C -> P: Salvar no CSV
+P --> C: Confirma gravação
+C --> I: Contato salvo
+I --> U: Exibe mensagem de sucesso
+
+@enduml
