@@ -209,4 +209,54 @@ def buscar_contato():
 
     pausar()
 ```
-Recebe o termo de busca, verifi
+Recebe o termo de busca, verifica se ele corresponde a uma email ou nome presente na agenda e atribui o valor dos elementos encontrados na lista "resultados". Se encontrar valores, mostra quantos foram encontrados e o contato contendo o valor.
+
+## Editar Contato
+```python
+def editar_contato():
+    cabecalho("✏️  EDITAR CONTATO")
+
+    if not agenda:
+        print("\n  Nenhum contato para editar.")
+        pausar()
+        return
+
+    try:
+        cid = int(entrada("ID do contato a editar: "))
+    except ValueError:
+        print("  ⚠  ID inválido.")
+        pausar()
+        return
+
+    contato = buscar_por_id(cid)
+    if not contato:
+        print(f"\n  ⚠  Contato #{cid} não encontrado.")
+        pausar()
+        return
+
+    print(f"\n  Editando: {contato['nome']}  (deixe em branco para manter)\n")
+
+    novo_nome = entrada(f"Novo nome [{contato['nome']}]: ", obrigatorio=False)
+
+    while True:
+        novo_email = entrada(f"Novo e-mail [{contato['email']}]: ", obrigatorio=False)
+        if not novo_email or validar_email(novo_email):
+            break
+        print("  ⚠  E-mail inválido.")
+
+    while True:
+        novo_tel = entrada(f"Novo telefone [{contato['telefone']}]: ", obrigatorio=False)
+        if not novo_tel or validar_telefone(novo_tel):
+            break
+        print("  ⚠  Telefone inválido.")
+
+    if novo_nome:    contato["nome"]     = novo_nome
+    if novo_email:   contato["email"]    = novo_email
+    if novo_tel:     contato["telefone"] = novo_tel
+
+    salvar_csv()
+    print(f"\n  ✅  Contato #{cid} atualizado!")
+    pausar()
+```
+Se a agenda estiver vazia, informa o usuário e retorna.
+
