@@ -7,13 +7,15 @@ ARQUIVO_CSV = "agenda_web.csv"
 CAMPOS_CSV  = ["id", "nome", "email", "telefone", "cep"]
 agenda: list[dict] = []
 ```
-Define atributos representando o número máximo de contatos que a agenda armazena, o nome do arquivo que salva os dados dela e uma lista com os campos que são salvos no arquivo e dentro do programa.
+Define atributos representando o número máximo de contatos que a agenda armazena, o nome do arquivo que salva os dados dela e uma lista com os campos que são salvos no arquivo (CAMPOS_CSV) e dentro do programa (agenda).
 
 ```python
 RE_EMAIL    = re.compile(r"^[\w\.\+\-]+@[\w\-]+\.[a-z]{2,}$", re.I)
 RE_TELEFONE = re.compile(r"^[\d\s\(\)\-\+]{7,20}$")
 ```
-Cria uma expressão regular, que é um objeto do python equivalente a um grupo de caracteres. <strong>\w</strong> é equivalente a todos os caracteres alfanuméricos, o mesmo se aplicando a <strong>\d</strong> e <strong>\s</strong> para números e espaços vazios. Os sinais <strong>\. \+ \-</strong> e <strong>\(\)</strong> representam os caracteres após a barra.  
+O método <strong>re.compile</strong> cria uma expressão regular, que é um objeto do python equivalente a um grupo de caracteres. 
+<strong>\w</strong> é equivalente a todos os caracteres alfanuméricos, o mesmo se aplicando a <strong>\d</strong> e <strong>\s</strong> para números e espaços vazios. Os sinais <strong>\. \+ \-</strong> e <strong>\(\)</strong> representam os caracteres após a barra.
+Em <strong>RE_EMAIL</strong>, a expressão regular define uma sequência de: caracteres alfanuméricos, ponto e/ou sinais de + e -; seguidas por um "@"; seguidos por caracteres alfanuméricos e/ou o sinal -; seguido por um ponto, seguido pelas letras minúsculas de "a" até "z"
 
 ```python
 def validar_email(email: str) -> bool:
@@ -98,3 +100,113 @@ def pausar():
 - linha(char="─", largura=60): digita no terminal o caractere atribuído em 'char'
 - cabeçalhi(titulo: str): recebe o título da página atual e gera um cabeçalho com o nome do programa e linhas separando os títulos
 - pausar: quando não é necessária entrada do usuário, mostra um texto indicando que ele pode seguir para a próxima página
+
+```python
+def entrada(prompt: str, obrigatorio=True) -> str:
+    while True:
+        valor = input(f"  {prompt}").strip()
+        if valor or not obrigatorio:
+            return valor
+        print("  ⚠  Campo obrigatório. Tente novamente.")
+```
+entrada(): recebe um texto indicando o que o usuário deve escrever, se o usuário não escrever nada em um texto obrigatório, mostra um aviso até que ele digite um valor.
+
+# Métodos CRUD
+## Criar cabeçalho
+```python
+def criar_contato():
+    cabecalho("➕  NOVO CONTATO")
+
+    if len(agenda) >= CAPACIDADE:
+        print(f"\n  ⛔  Agenda cheia! Capacidade máxima: {CAPACIDADE} contatos.")
+        pausar()
+        return
+
+    nome = entrada("Nome       : ")
+
+    while True:
+        email = entrada("E-mail     : ")
+        if validar_email(email):
+            break
+        print("  ⚠  E-mail inválido. Ex: usuario@email.com")
+
+    while True:
+        telefone = entrada("Telefone   : ")
+        if validar_telefone(telefone):
+            break
+        print("  ⚠  Telefone inválido. Use apenas dígitos, espaços, +, -, (, )")
+
+    contato = {"id": proximo_id(), "nome": nome,
+               "email": email, "telefone": telefone}
+    agenda.append(contato)
+    salvar_csv()
+
+    print(f"\n  ✅  Contato #{contato['id']} salvo com sucesso!")
+    pausar()
+```
+Usa o método "cabeçalho()" com o título da página, se o limite de contatos for atingido avisa o usuário e retorna, impedindo a criação do novo contato.
+Se houver espaço, recebe os valores do contato novo, verificando se eles são válidos e avisando o usuário caso não sejam.
+Quando todos os valores forem inseridos, cria um novo objeto de contato com eles e o id único, adicionando-os na agenda e salvando o conteúdo no arquivo csv.
+
+## Listar contatos
+```python
+def listar_contatos():
+    cabecalho("📋  LISTA DE CONTATOS")
+
+    if not agenda:
+        print("\n  Nenhum contato cadastrado ainda.")
+        pausar()
+        return
+
+    col_id  = 4
+    col_nom = 22
+    col_tel = 18
+    col_ema = 28
+
+    cabecalho_tabela = (
+        f"  {'ID':>{col_id}}  "
+        f"{'Nome':<{col_nom}}  "
+        f"{'Telefone':<{col_tel}}  "
+        f"{'E-mail':<{col_ema}}"
+    )
+    print(cabecalho_tabela)
+    linha()
+    for c in sorted(agenda, key=lambda x: x["nome"].lower()):
+        print(
+            f"  [{c['id']:>{col_id-2}}]  "
+            f"{c['nome']:<{col_nom}}  "
+            f"📞 {c['telefone']:<{col_tel-2}}  "
+            f"📧 {c['email']}"
+        )
+    linha()
+    print(f"  Total: {len(agenda)} / {CAPACIDADE} contatos")
+    pausar()
+```
+Se a agenda estiver vazia, informa o usuário e retorna.
+Se houverem elementos na agenda, cria uma lista com o nome de cada campo. A sequência ":<{col}" alinha o texto para a direção do símbolo "<" com uma margem igual ao valor entre chaves. Então, os valores precedidos por "col" definem o espaço entre os títulos.
+Com o método "sorted()", organiza os elementos da agenda por nome, convertendo o texto para minúsculo para que os códigos de caracteres maiúsculos não afetem a ordem.
+Faz um loop pela lista, mostrando os elementos ordenados na tela seguindo a posição horizontal dos títulos.
+Finalmente mostra a quantidade de contatos na agenda e a quantidade máxima.
+
+## Buscar Contato
+```python
+def buscar_contato():
+    cabecalho("🔍  BUSCAR CONTATO")
+    termo = entrada("Buscar por nome ou e-mail: ").lower()
+
+    resultados = [
+        c for c in agenda
+        if termo in c["nome"].lower() or termo in c["email"].lower()
+    ]
+
+    if not resultados:
+        print("\n  Nenhum contato encontrado.")
+    else:
+        print(f"\n  {len(resultados)} resultado(s):\n")
+        linha()
+        for c in resultados:
+            exibir_contato(c, detalhe=True)
+
+    pausar()
+```
+Recebe o termo de busca, verifi
