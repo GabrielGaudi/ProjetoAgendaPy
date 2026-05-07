@@ -1,5 +1,6 @@
 Documentação
 
+#
 ```python
 CAPACIDADE  = 100
 ARQUIVO_CSV = "agenda_web.csv"
@@ -12,7 +13,7 @@ Define atributos representando o número máximo de contatos que a agenda armaze
 RE_EMAIL    = re.compile(r"^[\w\.\+\-]+@[\w\-]+\.[a-z]{2,}$", re.I)
 RE_TELEFONE = re.compile(r"^[\d\s\(\)\-\+]{7,20}$")
 ```
-Cria uma expressão regular, que é um objeto do python equivalente a um grupo de caracteres
+Cria uma expressão regular, que é um objeto do python equivalente a um grupo de caracteres. <strong>\w</strong> é equivalente a todos os caracteres alfanuméricos, o mesmo se aplicando a <strong>\d</strong> e <strong>\s</strong> para números e espaços vazios. Os sinais <strong>\. \+ \-</strong> e <strong>\(\)</strong> representam os caracteres após a barra.  
 
 ```python
 def validar_email(email: str) -> bool:
@@ -59,4 +60,41 @@ def carregar_csv() -> bool:
     return True
   ```
 - salvar_csv(): usa o método do módulo "csv" para escrever (definido pelo parâmetro "w") um arquivo deste tipo com o nome atribuido anteriormente.
-- carregar_csv(): se um arquivo com o nome definido não for encontrado no caminho padrão, retorna False. Se encontrar, usa o método 'open' para receber o texto do arquivo
+- carregar_csv(): se um arquivo com o nome definido não for encontrado no caminho padrão, retorna False. Se encontrar, usa o método 'open' para receber o texto do arquivo.
+Para cada linha (elemento) no arquivo csv, adiciona os atributos correspondentes á lista dentro do programa, então retornando True.
+
+```python
+def carregar_demo() -> None:
+    """Dados de exemplo para a primeira execução."""
+    demos = [
+        {"id": 1, "nome": "Ana Silva",    "email": "ana@email.com",   "telefone": "(11) 91234-5678"},
+        {"id": 2, "nome": "Bruno Costa",  "email": "bruno@email.com", "telefone": "(21) 98765-4321"},
+        {"id": 3, "nome": "Carla Mendes", "email": "carla@email.com", "telefone": "(31) 97654-3210"},
+    ]
+    agenda.extend(demos)
+```
+Manualmente criaa novos objetos com contatos e valores para teste e os adiciona à lista do programa.
+
+# Métodos das agendas do terminal
+```python
+def limpar():
+    os.system("cls" if os.name == "nt" else "clear")
+
+def linha(char="─", largura=60):
+    print(char * largura)
+
+def cabecalho(titulo: str):
+    limpar()
+    linha("═")
+    print(f"{'📒  AGENDA DE CONTATOS':^60}")
+    linha("─")
+    print(f"  {titulo}")
+    linha("─")
+
+def pausar():
+    input("\n  ↵  Pressione ENTER para continuar...")
+```
+- limpar(): executa um comando para limpar o terminal de acordo com o SO utilizado
+- linha(char="─", largura=60): digita no terminal o caractere atribuído em 'char'
+- cabeçalhi(titulo: str): recebe o título da página atual e gera um cabeçalho com o nome do programa e linhas separando os títulos
+- pausar: quando não é necessária entrada do usuário, mostra um texto indicando que ele pode seguir para a próxima página
