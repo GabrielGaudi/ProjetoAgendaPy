@@ -1,0 +1,51 @@
+@startuml
+title Diagrama de Classes
+
+class Contato {
+    +int id
+    +string nome
+    +string email
+    +string telefone
+    +string cep
+    +string rua
+    +string bairro
+    +string numero
+    +string complemento
+    +string cidade
+    +string uf
+}
+
+class Agenda {
+    +list<Contato> contatos
+    +int CAPACIDADE
+    +string ARQUIVO_CSV
+    +list<string> CAMPOS_CSV
+    +carregar_csv()
+    +salvar_csv()
+    +criar_contato()
+    +listar_contatos()
+    +buscar_contato()
+    +editar_contato()
+    +excluir_contato()
+    +exibir_detalhes()
+}
+
+class Validador {
+    +validar_email(email)
+    +validar_telefone(telefone)
+    +validar_cep(cep)
+}
+
+class Interface {
+    +cabecalho(titulo)
+    +linha(char, largura)
+    +limpar()
+    +pausar()
+    +entrada(prompt, obrigatorio)
+}
+
+Agenda --> Contato
+Agenda --> Validador
+Agenda --> Interface
+
+@enduml

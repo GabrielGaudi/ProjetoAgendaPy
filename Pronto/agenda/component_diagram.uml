@@ -1,0 +1,27 @@
+@startuml
+title Diagrama de Componentes
+
+package "Interface CLI" {
+    [Menu Principal]
+    [Entrada de Dados]
+    [Exibição de Resultados]
+}
+
+package "Lógica de Negócio" {
+    [CRUD de Contato]
+    [Validação]
+    [Gerenciamento de IDs]
+}
+
+package "Persistência" {
+    [CSV Reader]
+    [CSV Writer]
+}
+
+[Menu Principal] --> [CRUD de Contato]
+[Entrada de Dados] --> [Validação]
+[CRUD de Contato] --> [CSV Writer]
+[CRUD de Contato] --> [CSV Reader]
+[Gerenciamento de IDs] --> [CRUD de Contato]
+
+@enduml
