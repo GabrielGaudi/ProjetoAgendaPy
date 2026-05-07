@@ -98,7 +98,7 @@ def pausar():
 ```
 - limpar(): executa um comando para limpar o terminal de acordo com o SO utilizado
 - linha(char="─", largura=60): digita no terminal o caractere atribuído em 'char'
-- cabeçalhi(titulo: str): recebe o título da página atual e gera um cabeçalho com o nome do programa e linhas separando os títulos
+- cabeçalho(titulo: str): recebe o título da página atual e gera um cabeçalho com o nome do programa e linhas separando os títulos
 - pausar: quando não é necessária entrada do usuário, mostra um texto indicando que ele pode seguir para a próxima página
 
 ```python
@@ -259,4 +259,104 @@ def editar_contato():
     pausar()
 ```
 Se a agenda estiver vazia, informa o usuário e retorna.
+Caso contrário, recebe um id e, caso ocorra um erro do valor inserido, avisa o usuário e retorna.
+Procura por um contato com o id inserido. Se não encontrar, informa o usuário e retorna. Se encontrar, mostra o nome atual do contato e recebe os valores novos para cada campo, validando se o valor está vazio ou corresponde ao padrão. Após receber os valores, adiciona os que não estiverem vazios ao contato e salva o arquivo csv.
 
+## Excluir Contato
+```python
+def excluir_contato():
+    cabecalho("🗑️  EXCLUIR CONTATO")
+
+    if not agenda:
+        print("\n  Nenhum contato para excluir.")
+        pausar()
+        return
+
+    try:
+        cid = int(entrada("ID do contato a excluir: "))
+    except ValueError:
+        print("  ⚠  ID inválido.")
+        pausar()
+        return
+
+    contato = buscar_por_id(cid)
+    if not contato:
+        print(f"\n  ⚠  Contato #{cid} não encontrado.")
+        pausar()
+        return
+
+    print(f"\n  Contato selecionado: {contato['nome']} | {contato['email']} | {contato['telefone']}")
+    conf = entrada("  Confirmar exclusão? (s/N): ", obrigatorio=False).lower()
+
+    if conf == "s":
+        agenda.remove(contato)
+        salvar_csv()
+        print(f"\n  ✅  Contato #{cid} removido.")
+    else:
+        print("\n  ❌  Exclusão cancelada.")
+
+    pausar()
+```
+Como no método de edição, valida o id recebido e o resultado da busca, mostrando os valores do contato encontrado. Pede confirmação do usuário e remove o elemento da agenda, salvando as alterações.
+
+## Exibir detalhes
+```python
+def exibir_detalhes():
+    cabecalho("🔎  DETALHES DO CONTATO")
+
+    try:
+        cid = int(entrada("ID do contato: "))
+    except ValueError:
+        print("  ⚠  ID inválido.")
+        pausar()
+        return
+
+    contato = buscar_por_id(cid)
+    if not contato:
+        print(f"\n  ⚠  Contato #{cid} não encontrado.")
+    else:
+        linha()
+        print(f"  ID       : {contato['id']}")
+        print(f"  Nome     : {contato['nome']}")
+        print(f"  E-mail   : {contato['email']}")
+        print(f"  Telefone : {contato['telefone']}")
+        linha()
+
+    pausar()
+```
+Busca com o id e mostra cada elemento do contato encontrado sequencialmente
+
+## Menu Principal
+```python
+MENU = [
+    ("1", "➕  Adicionar contato",   criar_contato),
+    ("2", "📋  Listar contatos",     listar_contatos),
+    ("3", "🔍  Buscar contato",      buscar_contato),
+    ("4", "🔎  Ver detalhes",        exibir_detalhes),
+    ("5", "✏️  Editar contato",      editar_contato),
+    ("6", "🗑️  Excluir contato",     excluir_contato),
+    ("0", "🚪  Sair",               None),
+]
+
+def menu_principal():
+    while True:
+        cabecalho("MENU PRINCIPAL")
+        print(f"  Contatos: {len(agenda)} / {CAPACIDADE}\n")
+        for chave, descricao, _ in MENU:
+            print(f"  [{chave}]  {descricao}")
+        linha()
+
+        opcao = entrada("Opção: ", obrigatorio=False).strip()
+
+        acao = next((fn for k, _, fn in MENU if k == opcao), ...)
+
+        if opcao == "0":
+            limpar()
+            print("\n  Até logo! 👋\n")
+            break
+        elif acao is ...:
+            print("  ⚠  Opção inválida.")
+            pausar()
+        else:
+            acao()
+```
