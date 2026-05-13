@@ -360,3 +360,23 @@ def menu_principal():
         else:
             acao()
 ```
+"MENU" é uma lista descrevendo os comandos disponíveis
+
+
+## Método de carregamento
+```python
+if __name__ == "__main__":
+    arquivo_existia = carregar_csv()
+    if not arquivo_existia:
+        # Primeira execução: carrega demos e já persiste
+        carregar_demo()
+        salvar_csv()
+        print(f"  💾  Novo arquivo '{ARQUIVO_CSV}' criado com dados de exemplo.")
+    else:
+        print(f"  💾  Dados carregados de '{ARQUIVO_CSV}'  ({len(agenda)} contato(s)).")
+    pausar()
+    menu_principal()
+```
+Bloco <strong>if __name__ == "__main__": </strong> verifica se esse arquivo é o que está sendo executado (cujo nome é atribuído como main); ou apenas um módulo sendo importado por outro arquivo. Isso impede que o arquivo incorreto seja executado.
+Procura pelo arquivo de salvamento e carrega os dados dele. Se ele estiver vazio, carrega os dados de exemplo e os salva no arquivo. Na agenda sem salvamento, apenas carrega dados demo.
+Então, abre o menu principal
