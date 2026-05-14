@@ -380,3 +380,50 @@ if __name__ == "__main__":
 Bloco <strong>if __name__ == "__main__": </strong> verifica se esse arquivo é o que está sendo executado (cujo nome é atribuído como main); ou apenas um módulo sendo importado por outro arquivo. Isso impede que o arquivo incorreto seja executado.
 Procura pelo arquivo de salvamento e carrega os dados dele. Se ele estiver vazio, carrega os dados de exemplo e os salva no arquivo. Na agenda sem salvamento, apenas carrega dados demo.
 Então, abre o menu principal
+
+# Agenda Web (html e css)
+- CSS: é um texto com a tag *styles* que permite inserir código de css dentro do html, definindo uma fonte padrão para página e cor, margens, posicionamento, etc de elementos html.
+
+## -nav
+```python
+def _nav(ativo: str = "") -> str:
+    """Barra de navegação com link ativo destacado."""
+    links = [
+        ("/listar",  "📋 Listar"),
+        ("/novo",    "➕ Novo"),
+        ("/buscar",  "🔍 Buscar"),
+    ]
+    items = "".join(
+        f'<a href="{url}" class="{"active" if url == ativo else ""}">{label}</a>'
+        for url, label in links
+    )
+    return f'<nav>{items}</nav>'
+```
+Cria uma barra de navegação com âncoras (tag <a>) que carregam outras páginas do site. O link correspondente à página atual (que é um parâmetro do método) recebe os estilos da classe <strong>ativo</strong>, que o deixam destacado.
+
+## _base
+```python
+def _base(titulo: str, corpo: str, ativo: str = "") -> str:
+    total = len(agenda)
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agenda — {titulo}</title>
+  {_CSS}
+</head>
+<body>
+  <header>
+    <span>📒</span>
+    <h1>Agenda de Contatos</h1>
+    <span class="badge">{total} / {CAPACIDADE} contatos</span>
+  </header>
+  {_nav(ativo)}
+  <main>{corpo}</main>
+  <footer>agenda_web.py · http.server · Python {__import__('sys').version.split()[0]}</footer>
+</body>
+</html>"""
+```
+Contém os elementos básicos do html em um texto.
+Dentro do cabeçalho, inclui os elementos de css criados no método _CSS; no corpo, mostra o número máximo e quantidade atual de contatos, a barra de navegação do método _nav; os elementos da página atual e um rodapé (footer) com a versão atual do python
